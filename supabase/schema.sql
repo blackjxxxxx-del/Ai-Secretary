@@ -75,3 +75,14 @@ CREATE INDEX idx_tasks_due_date ON tasks(due_date);
 CREATE INDEX idx_reminders_remind_at ON reminders(remind_at);
 CREATE INDEX idx_reminders_sent ON reminders(sent);
 CREATE INDEX idx_reminders_user_id ON reminders(user_id);
+
+-- Google OAuth Tokens
+CREATE TABLE google_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  access_token TEXT,
+  refresh_token TEXT NOT NULL,
+  expiry_date BIGINT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

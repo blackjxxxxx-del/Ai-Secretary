@@ -6,6 +6,7 @@ const { handleIntent, handlePendingDeadline, pendingStates } = require('../servi
 const { replyText, pushText, QUICK_REPLY_MAIN, QUICK_REPLY_AFTER_LIST } = require('../services/line')
 const { getOrCreateUser, supabase } = require('../db/supabase')
 const { checkQuota, recordUsage } = require('../services/quota')
+const { getTokens, getEmailSummary, getTodayCalendarEvents, addCalendarEvent, readSheet } = require('../services/google')
 const dayjs = require('dayjs')
 
 const config = {
@@ -48,6 +49,63 @@ async function handleMessageEvent(event) {
       await replyText(replyToken,
         `อัปเกรดเป็น Pro 499฿/เดือน\n\nคลิกลิงก์นี้เพื่อชำระเงินครับ:\n${upgradeUrl}\n\nได้รับ: สรุปเอกสารไม่จำกัด + ทุกฟีเจอร์ครบ`,
         QUICK_REPLY_MAIN)
+      return
+    }
+
+    // Google connect
+    const connectGoogleKeywords = ['เชื่อม google', 'connect google', 'ลิงก์ google', 'เชื่อมต่อ google', 'เชื่อม gmail']
+    if (connectGoogleKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
+      const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
+      const tokens = await getTokens(user.id)
+      if (tokens) {
+        await replyText(replyToken, 'เชื่อม Google แล้วครับ ลองพิมพ์ "สรุปอีเมล" หรือ "ดู Calendar" ได้เลย', QUICK_REPLY_MAIN)
+      } else {
+        await replyText(replyToken, `เชื่อม Google Account เพื่อให้ผมช่วยจัดการ Gmail, Calendar และ Sheets ได้ครับ\n\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
+      }
+      return
+    }
+
+    // Google Gmail
+    const emailKeywords = ['สรุปอีเมล', 'อีเมลวันนี้', 'อ่านอีเมล', 'มีอีเมลอะไร', 'เช็คอีเมล', 'ดูอีเมล']
+    if (emailKeywords.some(k => text.includes(k))) {
+      const tokens = await getTokens(user.id)
+      if (!tokens) {
+        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
+        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ กดลิงก์นี้เพื่อเชื่อมต่อ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
+        return
+      }
+      await replyText(replyToken, 'กำลังดึงอีเมลให้ครับ รอสักครู่...')
+      const summary = await getEmailSummary(user.id)
+      await pushText(lineUserId, summary)
+      return
+    }
+
+    // Google Calendar
+    const calendarKeywords = ['ดู calendar', 'google calendar', 'นัดหมาย google', 'ตาราง google', 'cal วันนี้']
+    if (calendarKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
+      const tokens = await getTokens(user.id)
+      if (!tokens) {
+        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
+        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ กดลิงก์นี้เพื่อเชื่อมต่อ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
+        return
+      }
+      const events = await getTodayCalendarEvents(user.id)
+      await replyText(replyToken, events, QUICK_REPLY_MAIN)
+      return
+    }
+
+    // Google Sheets — ต้องมี Sheet ID ใน URL format: ดู sheet [id]
+    const sheetMatch = text.match(/ดู\s*sheet[s]?\s+([a-zA-Z0-9_-]{20,})/i)
+    if (sheetMatch) {
+      const tokens = await getTokens(user.id)
+      if (!tokens) {
+        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
+        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
+        return
+      }
+      await replyText(replyToken, 'กำลังอ่าน Sheet ให้ครับ รอสักครู่...')
+      const data = await readSheet(user.id, sheetMatch[1])
+      await pushText(lineUserId, `📊 ข้อมูลจาก Sheet\n\n${data}`)
       return
     }
 
