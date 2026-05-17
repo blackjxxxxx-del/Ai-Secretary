@@ -97,6 +97,13 @@ async function handleMessageEvent(event) {
       return
     }
 
+    // Google Sheets write/create — ยังไม่รองรับ
+    const sheetWriteKeywords = ['สร้างชีต', 'สร้าง sheet', 'เพิ่มข้อมูล sheet', 'เขียน sheet', 'แก้ไข sheet', 'อัปเดต sheet']
+    if (sheetWriteKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
+      await replyText(replyToken, 'ตอนนี้ทำได้แค่อ่านข้อมูลจาก Sheet ที่มีอยู่แล้วครับ ยังเขียนหรือสร้างใหม่ไม่ได้\n\nใช้ "ดู Sheet [ID]" เพื่ออ่านข้อมูลได้เลยครับ', QUICK_REPLY_MAIN)
+      return
+    }
+
     // Google Sheets — ต้องมี Sheet ID ใน URL format: ดู sheet [id]
     const sheetMatch = text.match(/ดู\s*sheet[s]?\s+([a-zA-Z0-9_-]{20,})/i)
     if (sheetMatch) {
