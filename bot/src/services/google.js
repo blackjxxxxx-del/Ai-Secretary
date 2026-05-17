@@ -138,4 +138,17 @@ async function readSheet(userId, spreadsheetId, range = 'Sheet1!A1:Z20') {
   return rows.map(row => row.join(' | ')).join('\n')
 }
 
-module.exports = { getTokens, getAuthClient, getOAuth2Client, getEmailSummary, getTodayCalendarEvents, addCalendarEvent, readSheet }
+async function createSheet(userId, title) {
+  const auth = await getAuthClient(userId)
+  if (!auth) return null
+
+  const sheets = google.sheets({ version: 'v4', auth })
+  const res = await sheets.spreadsheets.create({
+    requestBody: { properties: { title } },
+  })
+
+  const url = `https://docs.google.com/spreadsheets/d/${res.data.spreadsheetId}/edit`
+  return { id: res.data.spreadsheetId, url, title }
+}
+
+module.exports = { getTokens, getAuthClient, getOAuth2Client, getEmailSummary, getTodayCalendarEvents, addCalendarEvent, readSheet, createSheet }

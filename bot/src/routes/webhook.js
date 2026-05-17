@@ -6,7 +6,7 @@ const { handleIntent, handlePendingDeadline, pendingStates } = require('../servi
 const { replyText, pushText, QUICK_REPLY_MAIN, QUICK_REPLY_AFTER_LIST } = require('../services/line')
 const { getOrCreateUser, supabase } = require('../db/supabase')
 const { checkQuota, recordUsage } = require('../services/quota')
-const { getTokens, getEmailSummary, getTodayCalendarEvents, addCalendarEvent, readSheet } = require('../services/google')
+const { getTokens, getEmailSummary, getTodayCalendarEvents, addCalendarEvent, readSheet, createSheet } = require('../services/google')
 const dayjs = require('dayjs')
 
 const config = {
@@ -97,10 +97,27 @@ async function handleMessageEvent(event) {
       return
     }
 
-    // Google Sheets write/create — ยังไม่รองรับ
-    const sheetWriteKeywords = ['สร้างชีต', 'สร้าง sheet', 'เพิ่มข้อมูล sheet', 'เขียน sheet', 'แก้ไข sheet', 'อัปเดต sheet']
-    if (sheetWriteKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
-      await replyText(replyToken, 'ตอนนี้ทำได้แค่อ่านข้อมูลจาก Sheet ที่มีอยู่แล้วครับ ยังเขียนหรือสร้างใหม่ไม่ได้\n\nใช้ "ดู Sheet [ID]" เพื่ออ่านข้อมูลได้เลยครับ', QUICK_REPLY_MAIN)
+    // Google Sheets create
+    const sheetCreateMatch = text.match(/สร้าง\s*(ชีต|sheet)\s*(.+)?/i) || text.match(/สร้าง\s*(.+)\s*(ชีต|sheet)/i)
+    if (sheetCreateMatch) {
+      const tokens = await getTokens(user.id)
+      if (!tokens) {
+        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
+        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
+        return
+      }
+      const rawTitle = sheetCreateMatch[2] || sheetCreateMatch[1] || ''
+      const isKeyword = ['ชีต', 'sheet', 'ใหม่', 'new'].includes(rawTitle.trim().toLowerCase())
+      const sheetTitle = (!rawTitle.trim() || isKeyword)
+        ? `Sheet ${dayjs().format('DD/MM/YYYY')}`
+        : rawTitle.trim()
+      await replyText(replyToken, `กำลังสร้าง Sheet "${sheetTitle}" ให้ครับ รอสักครู่...`)
+      const result = await createSheet(user.id, sheetTitle)
+      if (!result) {
+        await pushText(lineUserId, 'สร้าง Sheet ไม่ได้ครับ ลองเชื่อม Google ใหม่อีกครั้งนะครับ')
+      } else {
+        await pushText(lineUserId, `✅ สร้าง Sheet สำเร็จแล้วครับ\n\n📊 "${result.title}"\n\n${result.url}`)
+      }
       return
     }
 

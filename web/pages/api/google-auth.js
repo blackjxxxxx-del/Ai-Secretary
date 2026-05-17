@@ -16,7 +16,7 @@ export default function handler(req, res) {
     scope: [
       'https://www.googleapis.com/auth/gmail.readonly',
       'https://www.googleapis.com/auth/calendar',
-      'https://www.googleapis.com/auth/spreadsheets.readonly',
+      'https://www.googleapis.com/auth/spreadsheets',
     ],
     state: uid,
   })
