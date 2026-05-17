@@ -52,15 +52,18 @@ async function handleMessageEvent(event) {
       return
     }
 
-    // Google connect
+    // Google connect / status check
     const connectGoogleKeywords = ['เชื่อม google', 'connect google', 'ลิงก์ google', 'เชื่อมต่อ google', 'เชื่อม gmail']
-    if (connectGoogleKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
+    const googleStatusKeywords = ['เชื่อมสำเร็จมั้ย', 'เชื่อมแล้วยัง', 'google เชื่อมแล้วมั้ย', 'เชื่อมได้มั้ย', 'google ใช้งานได้มั้ย', 'เชื่อมสำเร็จไหม', 'เชื่อมแล้วไหม', 'ใช้ google ได้มั้ย']
+    const isGoogleConnect = connectGoogleKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))
+    const isGoogleStatus = googleStatusKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))
+    if (isGoogleConnect || isGoogleStatus) {
       const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
       const tokens = await getTokens(user.id)
       if (tokens) {
-        await replyText(replyToken, 'เชื่อม Google แล้วครับ ลองพิมพ์ "สรุปอีเมล" หรือ "ดู Calendar" ได้เลย', QUICK_REPLY_MAIN)
+        await replyText(replyToken, 'เชื่อม Google สำเร็จแล้วครับ ลองพิมพ์ได้เลย\n\n• "สรุปอีเมล" — ดูอีเมลล่าสุด\n• "ดู Calendar" — ดูนัดหมายวันนี้\n• "ดู Sheet [ID]" — อ่านข้อมูลจาก Sheets', QUICK_REPLY_MAIN)
       } else {
-        await replyText(replyToken, `เชื่อม Google Account เพื่อให้ผมช่วยจัดการ Gmail, Calendar และ Sheets ได้ครับ\n\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
+        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ กดลิงก์นี้เพื่อเชื่อมต่อ:\n\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
       }
       return
     }
