@@ -185,18 +185,26 @@ async function listDriveSheets(userId) {
   const auth = await getAuthClient(userId)
   if (!auth) return null
 
-  const drive = google.drive({ version: 'v3', auth })
-  const res = await drive.files.list({
-    q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
-    fields: 'files(id, name)',
-    orderBy: 'modifiedTime desc',
-    pageSize: 8,
-  })
+  try {
+    const drive = google.drive({ version: 'v3', auth })
+    const res = await drive.files.list({
+      q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+      fields: 'files(id, name)',
+      orderBy: 'modifiedTime desc',
+      pageSize: 8,
+    })
 
-  if (!res.data.files?.length) return 'ไม่พบ Google Sheets ในบัญชีของคุณครับ'
+    if (!res.data.files?.length) return 'ไม่พบ Google Sheets ในบัญชีของคุณครับ'
 
-  const list = res.data.files.map((f, i) => `${i + 1}. ${f.name}\n   ID: ${f.id}`)
-  return `📊 Google Sheets ล่าสุด\n\n${list.join('\n\n')}`
+    const list = res.data.files.map((f, i) => `${i + 1}. ${f.name}\n   ID: ${f.id}`)
+    return `📊 Google Sheets ล่าสุด\n\n${list.join('\n\n')}`
+  } catch (err) {
+    console.error('listDriveSheets error:', err.message, err.code)
+    if (err.code === 403) {
+      return 'SCOPE_ERROR'
+    }
+    throw err
+  }
 }
 
 async function getUpcomingEvents(userId, days = 7) {

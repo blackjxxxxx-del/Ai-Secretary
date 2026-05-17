@@ -139,7 +139,11 @@ async function handleMessageEvent(event) {
         if (!await requireGoogle()) break
         await replyText(replyToken, 'กำลังดึงรายชื่อ Sheets ให้ครับ รอแป๊บนึง...')
         const list = await listDriveSheets(user.id)
-        await pushText(lineUserId, list)
+        if (list === 'SCOPE_ERROR') {
+          await pushText(lineUserId, `ยังไม่มีสิทธิ์เข้าถึง Drive ครับ ต้องเชื่อม Google ใหม่เพื่ออัปเดตสิทธิ์\n\n${webUrl}/connect-google?uid=${lineUserId}`)
+        } else {
+          await pushText(lineUserId, list)
+        }
         break
       }
 
