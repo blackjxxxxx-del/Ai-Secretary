@@ -189,11 +189,8 @@ async function handleMessageEvent(event) {
       }
 
       case 'chat': {
-        const today = dayjs().format('YYYY-MM-DD')
-        const { data: tasks } = await supabase
-          .from('tasks').select('title')
-          .eq('user_id', user.id).eq('status', 'pending').eq('due_date', today).limit(5)
-        const reply = await generateChatReply(text, tasks || [])
+        // Gemini แนบ reply มาใน intent แล้ว ไม่ต้องเรียกรอบ 2
+        const reply = intent.reply || await generateChatReply(text, [])
         await replyText(replyToken, reply, QUICK_REPLY_MAIN)
         break
       }
@@ -205,8 +202,12 @@ async function handleMessageEvent(event) {
       }
     }
   } catch (err) {
-    console.error('handleMessageEvent error:', err)
-    await replyText(replyToken, 'ขออภัยครับ เกิดข้อผิดพลาด ลองใหม่อีกครั้งนะครับ')
+    console.error('handleMessageEvent error:', err?.message || err)
+    const is429 = err?.status === 429 || err?.message?.includes('429') || err?.message?.includes('Too Many Requests')
+    const msg = is429
+      ? 'ใช้งานหนักไปหน่อย รอ 15-20 วิแล้วลองใหม่นะครับ 😅'
+      : 'ขออภัยครับ เกิดข้อผิดพลาด ลองใหม่อีกครั้งนะครับ'
+    await replyText(replyToken, msg)
   }
 }
 

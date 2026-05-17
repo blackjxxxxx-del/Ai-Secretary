@@ -56,7 +56,9 @@ add_sheet_row: {"intent":"add_sheet_row","spreadsheetId":"1BxiMVs0XRA5...","valu
 connect_google: {"intent":"connect_google","action":"status"}
 connect_google reconnect: {"intent":"connect_google","action":"reconnect"}
 
-chat: {"intent":"chat"}
+chat (ตอบในช่อง reply ด้วยเลย อย่าให้ว่าง):
+{"intent":"chat","reply":"ข้อความตอบกลับแบบเพื่อนสนิท ภาษาไทย เป็นธรรมชาติ ไม่ทางการ"}
+
 summarize: {"intent":"summarize"}
 unknown: {"intent":"unknown"}
 
@@ -66,7 +68,8 @@ unknown: {"intent":"unknown"}
 - add_calendar ใช้เมื่อ user พูดถึง Google Calendar โดยตรง หรือบอกให้ลงปฏิทิน Google
 - create_task ใช้เมื่อ user บอกให้จดงาน/เพิ่มงานทั่วไป
 - คำถามเกี่ยวกับความสามารถบอท ให้เป็น chat เสมอ
-- ข้อความสั้นๆ ทักทาย ระบาย ให้เป็น chat`
+- ข้อความสั้นๆ ทักทาย ระบาย ให้เป็น chat
+- สำหรับ chat: ตอบเหมือนเพื่อนสนิท อ่านอารมณ์ ความยาวเหมาะสม`
 
 const CHAT_PROMPT = `คุณคือ "เลขา" — AI ที่ฉลาด เข้าใจบริบท และคุยเป็นธรรมชาติมาก
 
