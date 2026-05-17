@@ -93,11 +93,28 @@ user พิมพ์: "{MESSAGE}"
 
 ตอบเหมือนคนจริงๆ คิดแล้วตอบ ไม่ใช่แค่ fill template`
 
+async function callWithRetry(fn, retries = 3, delayMs = 16000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn()
+    } catch (err) {
+      const is429 = err?.status === 429 || err?.message?.includes('429') || err?.message?.includes('Too Many Requests')
+      if (is429 && i < retries - 1) {
+        console.log(`Gemini rate limit, retrying in ${delayMs / 1000}s...`)
+        await new Promise(r => setTimeout(r, delayMs))
+        delayMs *= 1.5
+      } else {
+        throw err
+      }
+    }
+  }
+}
+
 async function analyzeMessage(text) {
   const today = dayjs().format('YYYY-MM-DD')
   const prompt = SYSTEM_PROMPT.replace('{TODAY}', today) + `\n\nข้อความ: "${text}"`
 
-  const result = await model.generateContent(prompt)
+  const result = await callWithRetry(() => model.generateContent(prompt))
   const raw = result.response.text().trim()
 
   const jsonMatch = raw.match(/\{[\s\S]*\}/)
@@ -119,7 +136,7 @@ async function generateChatReply(message, tasks = []) {
     .replace('{TASKS}', taskSummary)
     .replace('{MESSAGE}', message)
 
-  const result = await model.generateContent(prompt)
+  const result = await callWithRetry(() => model.generateContent(prompt))
   return result.response.text().trim()
 }
 
