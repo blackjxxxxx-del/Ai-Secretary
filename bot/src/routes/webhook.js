@@ -52,6 +52,14 @@ async function handleMessageEvent(event) {
       return
     }
 
+    // Google reconnect — ส่งลิงก์เสมอแม้จะมี token แล้ว
+    const reconnectKeywords = ['เชื่อมใหม่', 'reconnect google', 'เชื่อม google ใหม่', 'ต่อ google ใหม่', 'อัปเดต google']
+    if (reconnectKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
+      const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
+      await replyText(replyToken, `กดลิงก์นี้เพื่อเชื่อม Google ใหม่ครับ (จะได้รับสิทธิ์ล่าสุดทั้งหมด):\n\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
+      return
+    }
+
     // Google connect / status check
     const connectGoogleKeywords = ['เชื่อม google', 'connect google', 'ลิงก์ google', 'เชื่อมต่อ google', 'เชื่อม gmail']
     const googleStatusKeywords = ['เชื่อมสำเร็จมั้ย', 'เชื่อมแล้วยัง', 'google เชื่อมแล้วมั้ย', 'เชื่อมได้มั้ย', 'google ใช้งานได้มั้ย', 'เชื่อมสำเร็จไหม', 'เชื่อมแล้วไหม', 'ใช้ google ได้มั้ย']
@@ -61,7 +69,7 @@ async function handleMessageEvent(event) {
       const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
       const tokens = await getTokens(user.id)
       if (tokens) {
-        await replyText(replyToken, 'เชื่อม Google สำเร็จแล้วครับ ลองพิมพ์ได้เลย\n\n• "สรุปอีเมล" — ดูอีเมลล่าสุด\n• "ดู Calendar" — ดูนัดหมายวันนี้\n• "ดู Sheet [ID]" — อ่านข้อมูลจาก Sheets', QUICK_REPLY_MAIN)
+        await replyText(replyToken, 'เชื่อม Google แล้วครับ ลองพิมพ์ได้เลย\n\n• "สรุปอีเมล" — ดูอีเมลล่าสุด\n• "ดู Calendar" — ดูนัดหมายวันนี้\n• "ส่งเมล์ถึง..." — ส่งอีเมล\n• "มีชีตอะไรบ้าง" — ลิสต์ Sheets\n\nถ้าต้องการอัปเดตสิทธิ์ พิมพ์ "เชื่อมใหม่" ครับ', QUICK_REPLY_MAIN)
       } else {
         await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ กดลิงก์นี้เพื่อเชื่อมต่อ:\n\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
       }
