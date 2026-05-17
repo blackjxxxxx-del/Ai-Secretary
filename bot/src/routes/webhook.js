@@ -42,206 +42,164 @@ async function handleMessageEvent(event) {
       return
     }
 
+    // upgrade — ยังคง keyword เพราะเป็น business critical
     const upgradeKeywords = ['อัปเกรด', 'อัพเกรด', 'อัพเพลน', 'อัปเพลน', 'upgrade', 'สมัคร pro', 'ซื้อ pro', 'pro plan', 'แพลน pro', 'plan pro', 'ใช้โปร', 'สมัครโปร']
     if (upgradeKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
       const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
-      const upgradeUrl = `${webUrl}/upgrade?uid=${lineUserId}`
       await replyText(replyToken,
-        `อัปเกรดเป็น Pro 499฿/เดือน\n\nคลิกลิงก์นี้เพื่อชำระเงินครับ:\n${upgradeUrl}\n\nได้รับ: สรุปเอกสารไม่จำกัด + ทุกฟีเจอร์ครบ`,
+        `อัปเกรดเป็น Pro 499฿/เดือน\n\nคลิกลิงก์นี้เพื่อชำระเงินครับ:\n${webUrl}/upgrade?uid=${lineUserId}\n\nได้รับ: สรุปเอกสารไม่จำกัด + ทุกฟีเจอร์ครบ`,
         QUICK_REPLY_MAIN)
       return
     }
 
-    // Google reconnect — ส่งลิงก์เสมอแม้จะมี token แล้ว
-    const reconnectKeywords = ['เชื่อมใหม่', 'reconnect google', 'เชื่อม google ใหม่', 'ต่อ google ใหม่', 'อัปเดต google']
-    if (reconnectKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
-      const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
-      await replyText(replyToken, `กดลิงก์นี้เพื่อเชื่อม Google ใหม่ครับ (จะได้รับสิทธิ์ล่าสุดทั้งหมด):\n\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
-      return
-    }
-
-    // Google connect / status check
-    const connectGoogleKeywords = ['เชื่อม google', 'connect google', 'ลิงก์ google', 'เชื่อมต่อ google', 'เชื่อม gmail']
-    const googleStatusKeywords = ['เชื่อมสำเร็จมั้ย', 'เชื่อมแล้วยัง', 'google เชื่อมแล้วมั้ย', 'เชื่อมได้มั้ย', 'google ใช้งานได้มั้ย', 'เชื่อมสำเร็จไหม', 'เชื่อมแล้วไหม', 'ใช้ google ได้มั้ย']
-    const isGoogleConnect = connectGoogleKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))
-    const isGoogleStatus = googleStatusKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))
-    if (isGoogleConnect || isGoogleStatus) {
-      const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
-      const tokens = await getTokens(user.id)
-      if (tokens) {
-        await replyText(replyToken, 'เชื่อม Google แล้วครับ ลองพิมพ์ได้เลย\n\n• "สรุปอีเมล" — ดูอีเมลล่าสุด\n• "ดู Calendar" — ดูนัดหมายวันนี้\n• "ส่งเมล์ถึง..." — ส่งอีเมล\n• "มีชีตอะไรบ้าง" — ลิสต์ Sheets\n\nถ้าต้องการอัปเดตสิทธิ์ พิมพ์ "เชื่อมใหม่" ครับ', QUICK_REPLY_MAIN)
-      } else {
-        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ กดลิงก์นี้เพื่อเชื่อมต่อ:\n\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
-      }
-      return
-    }
-
-    // Google Gmail
-    const emailKeywords = ['สรุปอีเมล', 'อีเมลวันนี้', 'อ่านอีเมล', 'มีอีเมลอะไร', 'เช็คอีเมล', 'ดูอีเมล']
-    if (emailKeywords.some(k => text.includes(k))) {
-      const tokens = await getTokens(user.id)
-      if (!tokens) {
-        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
-        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ กดลิงก์นี้เพื่อเชื่อมต่อ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
-        return
-      }
-      await replyText(replyToken, 'กำลังดึงอีเมลให้ครับ รอสักครู่...')
-      const summary = await getEmailSummary(user.id)
-      await pushText(lineUserId, summary)
-      return
-    }
-
-    // Google Calendar
-    const calendarKeywords = ['ดู calendar', 'google calendar', 'นัดหมาย google', 'ตาราง google', 'cal วันนี้']
-    if (calendarKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
-      const tokens = await getTokens(user.id)
-      if (!tokens) {
-        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
-        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ กดลิงก์นี้เพื่อเชื่อมต่อ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
-        return
-      }
-      const events = await getTodayCalendarEvents(user.id)
-      await replyText(replyToken, events, QUICK_REPLY_MAIN)
-      return
-    }
-
-    // Google Sheets create
-    const sheetCreateMatch = text.match(/สร้าง\s*(ชีต|sheet)\s*(.+)?/i) || text.match(/สร้าง\s*(.+)\s*(ชีต|sheet)/i)
-    if (sheetCreateMatch) {
-      const tokens = await getTokens(user.id)
-      if (!tokens) {
-        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
-        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
-        return
-      }
-      const rawTitle = sheetCreateMatch[2] || sheetCreateMatch[1] || ''
-      const isKeyword = ['ชีต', 'sheet', 'ใหม่', 'new'].includes(rawTitle.trim().toLowerCase())
-      const sheetTitle = (!rawTitle.trim() || isKeyword)
-        ? `Sheet ${dayjs().format('DD/MM/YYYY')}`
-        : rawTitle.trim()
-      await replyText(replyToken, `กำลังสร้าง Sheet "${sheetTitle}" ให้ครับ รอสักครู่...`)
-      const result = await createSheet(user.id, sheetTitle)
-      if (!result) {
-        await pushText(lineUserId, 'สร้าง Sheet ไม่ได้ครับ ลองเชื่อม Google ใหม่อีกครั้งนะครับ')
-      } else {
-        await pushText(lineUserId, `✅ สร้าง Sheet สำเร็จแล้วครับ\n\n📊 "${result.title}"\n\n${result.url}`)
-      }
-      return
-    }
-
-    // Google Sheets — อ่าน sheet [id]
-    const sheetMatch = text.match(/ดู\s*sheet[s]?\s+([a-zA-Z0-9_-]{20,})/i)
-    if (sheetMatch) {
-      const tokens = await getTokens(user.id)
-      if (!tokens) {
-        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
-        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
-        return
-      }
-      await replyText(replyToken, 'กำลังอ่าน Sheet ให้ครับ รอสักครู่...')
-      const data = await readSheet(user.id, sheetMatch[1])
-      await pushText(lineUserId, `📊 ข้อมูลจาก Sheet\n\n${data}`)
-      return
-    }
-
-    // Google Sheets — ลิสต์ชีตทั้งหมด
-    const listSheetKeywords = ['ดูชีตทั้งหมด', 'ชีตที่มี', 'รายชื่อ sheet', 'sheet ทั้งหมด', 'มีชีตอะไรบ้าง', 'ชีตมีอะไรบ้าง', 'ชีต ทั้งหมด', 'ดูชีต', 'list sheet', 'sheets ทั้งหมด', 'ชีตอะไรบ้าง']
-    if (listSheetKeywords.some(k => text.toLowerCase().includes(k.toLowerCase())) || /ชีต.{0,5}(มี|อะไร|ทั้งหมด)/i.test(text)) {
-      const tokens = await getTokens(user.id)
-      if (!tokens) {
-        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
-        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
-        return
-      }
-      await replyText(replyToken, 'กำลังดึงรายชื่อ Sheets ให้ครับ รอสักครู่...')
-      const list = await listDriveSheets(user.id)
-      await pushText(lineUserId, list)
-      return
-    }
-
-    // Google Calendar — ดูนัดหมายล่วงหน้า
-    const upcomingKeywords = ['นัดหมายสัปดาห์นี้', 'นัดหน้า', 'calendar อาทิตย์นี้', 'ตารางสัปดาห์นี้', 'นัดหมาย 7 วัน', 'นัดหมายล่วงหน้า', 'ตาราง 7 วัน']
-    if (upcomingKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
-      const tokens = await getTokens(user.id)
-      if (!tokens) {
-        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
-        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
-        return
-      }
-      const events = await getUpcomingEvents(user.id, 7)
-      await replyText(replyToken, events, QUICK_REPLY_MAIN)
-      return
-    }
-
-    // Google Calendar — ลบนัดหมาย
-    const deleteCalMatch = text.match(/(?:ลบ|ยกเลิก)\s*(?:นัด|นัดหมาย|ปฏิทิน|calendar)\s*(.+)/i)
-    if (deleteCalMatch) {
-      const tokens = await getTokens(user.id)
-      if (!tokens) {
-        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
-        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
-        return
-      }
-      const result = await deleteCalendarEvent(user.id, deleteCalMatch[1].trim())
-      await replyText(replyToken, result, QUICK_REPLY_MAIN)
-      return
-    }
-
+    // ให้ Gemini เข้าใจ intent ทั้งหมด
     const intent = await analyzeMessage(text)
+    const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
 
-    // send_email intent
-    if (intent.intent === 'send_email') {
+    // helper สำหรับเช็ค Google token
+    const requireGoogle = async () => {
       const tokens = await getTokens(user.id)
       if (!tokens) {
-        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
-        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
-        return
+        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ กดลิงก์นี้เพื่อเชื่อมต่อ:\n\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
+        return null
       }
-      if (!intent.to || !intent.subject || !intent.body) {
-        await replyText(replyToken, 'กรุณาระบุให้ครบครับ: ถึงใคร (email), เรื่องอะไร, และเนื้อหา\n\nตัวอย่าง: "ส่งเมล์ถึง john@gmail.com เรื่อง ยืนยันนัด เนื้อหา สวัสดีครับ ขอยืนยันนัดพรุ่งนี้ 10 โมงครับ"', QUICK_REPLY_MAIN)
-        return
-      }
-      await replyText(replyToken, `กำลังส่งอีเมลถึง ${intent.to} ให้ครับ...`)
-      const result = await sendEmail(user.id, intent.to, intent.subject, intent.body)
-      await pushText(lineUserId, result)
-      return
+      return tokens
     }
 
-    // add_sheet_row intent
-    if (intent.intent === 'add_sheet_row') {
-      const tokens = await getTokens(user.id)
-      if (!tokens) {
-        const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
-        await replyText(replyToken, `ยังไม่ได้เชื่อม Google ครับ:\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
-        return
+    switch (intent.intent) {
+
+      case 'connect_google': {
+        const tokens = await getTokens(user.id)
+        if (intent.action === 'reconnect' || !tokens) {
+          await replyText(replyToken, `กดลิงก์นี้เพื่อเชื่อม Google ครับ:\n\n${webUrl}/connect-google?uid=${lineUserId}`, QUICK_REPLY_MAIN)
+        } else {
+          await replyText(replyToken, 'เชื่อม Google แล้วครับ บอกได้เลยว่าอยากให้ทำอะไร\n\nเช่น "ดูอีเมล" "ดูนัดพรุ่งนี้" "ส่งเมล์ถึง..." "ดูชีตทั้งหมด" ครับ', QUICK_REPLY_MAIN)
+        }
+        break
       }
-      if (!intent.spreadsheetId || !intent.values) {
-        await replyText(replyToken, 'กรุณาระบุ Sheet ID และข้อมูลที่จะเพิ่มครับ\n\nตัวอย่าง: "เพิ่มข้อมูลลง sheet [ID] ว่า ชื่อ, อายุ, เบอร์"', QUICK_REPLY_MAIN)
-        return
+
+      case 'list_emails': {
+        if (!await requireGoogle()) break
+        await replyText(replyToken, 'กำลังดึงอีเมลให้ครับ รอสักครู่...')
+        const summary = await getEmailSummary(user.id)
+        await pushText(lineUserId, summary)
+        break
       }
-      const result = await addSheetRow(user.id, intent.spreadsheetId, intent.values)
-      await replyText(replyToken, result, QUICK_REPLY_MAIN)
-      return
-    }
 
-    if (intent.intent === 'chat') {
-      const today = dayjs().format('YYYY-MM-DD')
-      const { data: tasks } = await supabase
-        .from('tasks').select('title')
-        .eq('user_id', user.id).eq('status', 'pending').eq('due_date', today).limit(5)
-      const reply = await generateChatReply(text, tasks || [])
-      await replyText(replyToken, reply, QUICK_REPLY_MAIN)
-      return
-    }
+      case 'send_email': {
+        if (!await requireGoogle()) break
+        if (!intent.to || !intent.subject || !intent.body) {
+          await replyText(replyToken, 'บอกให้ครบนะครับ: ส่งถึงใคร (email), เรื่องอะไร, แล้วก็เนื้อหา\n\nเช่น "ส่งเมล์ถึง john@gmail.com เรื่อง ยืนยันนัด ข้อความว่า ขอยืนยันนัดพรุ่งนี้ 10 โมงครับ"', QUICK_REPLY_MAIN)
+          break
+        }
+        await replyText(replyToken, `กำลังส่งอีเมลถึง ${intent.to} ให้ครับ...`)
+        const result = await sendEmail(user.id, intent.to, intent.subject, intent.body)
+        await pushText(lineUserId, result)
+        break
+      }
 
-    if (intent.intent === 'summarize') {
-      await handleSummarizeText(replyToken, text, user)
-      return
-    }
+      case 'list_calendar': {
+        if (!await requireGoogle()) break
+        const events = await getTodayCalendarEvents(user.id)
+        await replyText(replyToken, events, QUICK_REPLY_MAIN)
+        break
+      }
 
-    const reply = await handleIntent(intent, user)
-    const qr = intent.intent === 'list_tasks' ? QUICK_REPLY_AFTER_LIST : QUICK_REPLY_MAIN
-    await replyText(replyToken, reply, qr)
+      case 'upcoming_calendar': {
+        if (!await requireGoogle()) break
+        const days = intent.days || 7
+        const events = await getUpcomingEvents(user.id, days)
+        await replyText(replyToken, events, QUICK_REPLY_MAIN)
+        break
+      }
+
+      case 'add_calendar': {
+        if (!await requireGoogle()) break
+        if (!intent.title || !intent.date) {
+          await replyText(replyToken, 'บอกด้วยนะครับว่าจะนัดเรื่องอะไร วันไหน เวลาอะไร\n\nเช่น "ลงปฏิทิน ประชุมทีม พรุ่งนี้ 10 โมง"', QUICK_REPLY_MAIN)
+          break
+        }
+        const result = await addCalendarEvent(user.id, intent.title, intent.date, intent.time || null)
+        await replyText(replyToken, result, QUICK_REPLY_MAIN)
+        break
+      }
+
+      case 'delete_calendar': {
+        if (!await requireGoogle()) break
+        if (!intent.keyword) {
+          await replyText(replyToken, 'จะลบนัดหมายอะไรครับ บอกชื่อหรือคำที่เกี่ยวข้องได้เลย', QUICK_REPLY_MAIN)
+          break
+        }
+        const result = await deleteCalendarEvent(user.id, intent.keyword)
+        await replyText(replyToken, result, QUICK_REPLY_MAIN)
+        break
+      }
+
+      case 'list_sheets': {
+        if (!await requireGoogle()) break
+        await replyText(replyToken, 'กำลังดึงรายชื่อ Sheets ให้ครับ รอแป๊บนึง...')
+        const list = await listDriveSheets(user.id)
+        await pushText(lineUserId, list)
+        break
+      }
+
+      case 'read_sheet': {
+        if (!await requireGoogle()) break
+        if (!intent.spreadsheetId) {
+          await replyText(replyToken, 'บอก Sheet ID ด้วยนะครับ หาได้จาก URL ของ Sheet\n\nเช่น "อ่าน sheet 1BxiMVs0XRA5..."', QUICK_REPLY_MAIN)
+          break
+        }
+        await replyText(replyToken, 'กำลังอ่าน Sheet ให้ครับ รอสักครู่...')
+        const data = await readSheet(user.id, intent.spreadsheetId)
+        await pushText(lineUserId, `📊 ข้อมูลจาก Sheet\n\n${data}`)
+        break
+      }
+
+      case 'create_sheet': {
+        if (!await requireGoogle()) break
+        const title = intent.title || `Sheet ${dayjs().format('DD/MM/YYYY')}`
+        await replyText(replyToken, `กำลังสร้าง Sheet "${title}" ให้ครับ รอสักครู่...`)
+        const result = await createSheet(user.id, title)
+        if (!result) {
+          await pushText(lineUserId, 'สร้าง Sheet ไม่ได้ครับ ลองใหม่อีกครั้งนะครับ')
+        } else {
+          await pushText(lineUserId, `✅ สร้าง Sheet สำเร็จแล้วครับ\n\n📊 "${result.title}"\n\n${result.url}`)
+        }
+        break
+      }
+
+      case 'add_sheet_row': {
+        if (!await requireGoogle()) break
+        if (!intent.spreadsheetId || !intent.values) {
+          await replyText(replyToken, 'บอก Sheet ID และข้อมูลที่จะเพิ่มด้วยครับ\n\nเช่น "เพิ่มข้อมูลใน sheet [ID] ว่า ชื่อ, ราคา, วันที่"', QUICK_REPLY_MAIN)
+          break
+        }
+        const result = await addSheetRow(user.id, intent.spreadsheetId, intent.values)
+        await replyText(replyToken, result, QUICK_REPLY_MAIN)
+        break
+      }
+
+      case 'summarize': {
+        await handleSummarizeText(replyToken, text, user)
+        break
+      }
+
+      case 'chat': {
+        const today = dayjs().format('YYYY-MM-DD')
+        const { data: tasks } = await supabase
+          .from('tasks').select('title')
+          .eq('user_id', user.id).eq('status', 'pending').eq('due_date', today).limit(5)
+        const reply = await generateChatReply(text, tasks || [])
+        await replyText(replyToken, reply, QUICK_REPLY_MAIN)
+        break
+      }
+
+      default: {
+        const reply = await handleIntent(intent, user)
+        const qr = intent.intent === 'list_tasks' ? QUICK_REPLY_AFTER_LIST : QUICK_REPLY_MAIN
+        await replyText(replyToken, reply, qr)
+      }
+    }
   } catch (err) {
     console.error('handleMessageEvent error:', err)
     await replyText(replyToken, 'ขออภัยครับ เกิดข้อผิดพลาด ลองใหม่อีกครั้งนะครับ')
