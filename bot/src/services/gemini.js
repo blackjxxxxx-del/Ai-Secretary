@@ -16,6 +16,8 @@ intent ที่รองรับ:
 - done_task: ทำเสร็จแล้ว
 - brain_dump: พิมพ์มั่วๆ หลาย task
 - delete_task: ลบงาน
+- send_email: ส่งอีเมล
+- add_sheet_row: เพิ่มข้อมูลแถวใหม่ใน Sheet
 - chat: คุยทั่วไป ถามตอบ หรือข้อความที่ไม่เกี่ยวกับ task
 - summarize: ขอให้สรุปเอกสารหรือข้อความ หรือข้อความที่ยาวมาก (>200 คำ)
 - unknown: ไม่เข้าใจ
@@ -42,6 +44,12 @@ delete_task (ลบงานที่ไม่มีกำหนดเวลา)
 
 delete_task (ลบทั้งหมด):
 {"intent":"delete_task","scope":"all"}
+
+send_email (ส่งอีเมล ต้องระบุ to, subject, body):
+{"intent":"send_email","to":"someone@gmail.com","subject":"หัวข้ออีเมล","body":"เนื้อหาอีเมล"}
+
+add_sheet_row (เพิ่มข้อมูลลง Sheet ระบุ spreadsheetId และ values เป็น array):
+{"intent":"add_sheet_row","spreadsheetId":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms","values":["ข้อมูล1","ข้อมูล2","ข้อมูล3"]}
 
 chat (คุยทั่วไป ระบาย ถามอะไรก็ได้):
 {"intent":"chat","message":"เหนื่อยมากเลยวันนี้"}

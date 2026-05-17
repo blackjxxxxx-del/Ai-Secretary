@@ -151,4 +151,149 @@ async function createSheet(userId, title) {
   return { id: res.data.spreadsheetId, url, title }
 }
 
-module.exports = { getTokens, getAuthClient, getOAuth2Client, getEmailSummary, getTodayCalendarEvents, addCalendarEvent, readSheet, createSheet }
+async function addSheetRow(userId, spreadsheetId, values) {
+  const auth = await getAuthClient(userId)
+  if (!auth) return null
+
+  const sheets = google.sheets({ version: 'v4', auth })
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: 'Sheet1',
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [values] },
+  })
+
+  return `✅ เพิ่มข้อมูลลง Sheet แล้วครับ`
+}
+
+async function updateSheetCell(userId, spreadsheetId, range, value) {
+  const auth = await getAuthClient(userId)
+  if (!auth) return null
+
+  const sheets = google.sheets({ version: 'v4', auth })
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [[value]] },
+  })
+
+  return `✅ อัปเดต ${range} เรียบร้อยแล้วครับ`
+}
+
+async function listDriveSheets(userId) {
+  const auth = await getAuthClient(userId)
+  if (!auth) return null
+
+  const drive = google.drive({ version: 'v3', auth })
+  const res = await drive.files.list({
+    q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
+    fields: 'files(id, name)',
+    orderBy: 'modifiedTime desc',
+    pageSize: 8,
+  })
+
+  if (!res.data.files?.length) return 'ไม่พบ Google Sheets ในบัญชีของคุณครับ'
+
+  const list = res.data.files.map((f, i) => `${i + 1}. ${f.name}\n   ID: ${f.id}`)
+  return `📊 Google Sheets ล่าสุด\n\n${list.join('\n\n')}`
+}
+
+async function getUpcomingEvents(userId, days = 7) {
+  const auth = await getAuthClient(userId)
+  if (!auth) return null
+
+  const calendar = google.calendar({ version: 'v3', auth })
+  const now = new Date()
+  const future = new Date(now)
+  future.setDate(future.getDate() + days)
+
+  const res = await calendar.events.list({
+    calendarId: 'primary',
+    timeMin: now.toISOString(),
+    timeMax: future.toISOString(),
+    singleEvents: true,
+    orderBy: 'startTime',
+    maxResults: 20,
+  })
+
+  if (!res.data.items?.length) return `ไม่มีนัดหมายใน ${days} วันข้างหน้าครับ`
+
+  const grouped = {}
+  for (const e of res.data.items) {
+    const date = e.start.date || e.start.dateTime?.split('T')[0]
+    if (!grouped[date]) grouped[date] = []
+    const time = e.start.dateTime
+      ? new Date(e.start.dateTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+      : 'ทั้งวัน'
+    grouped[date].push(`  • ${e.summary} (${time})`)
+  }
+
+  const lines = Object.entries(grouped).map(([date, events]) => {
+    const d = new Date(date + 'T00:00:00')
+    const label = d.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' })
+    return `📅 ${label}\n${events.join('\n')}`
+  })
+
+  return `นัดหมาย ${days} วันข้างหน้า\n\n${lines.join('\n\n')}`
+}
+
+async function deleteCalendarEvent(userId, keyword) {
+  const auth = await getAuthClient(userId)
+  if (!auth) return null
+
+  const calendar = google.calendar({ version: 'v3', auth })
+  const now = new Date()
+  const future = new Date(now)
+  future.setDate(future.getDate() + 60)
+
+  const res = await calendar.events.list({
+    calendarId: 'primary',
+    timeMin: now.toISOString(),
+    timeMax: future.toISOString(),
+    singleEvents: true,
+    q: keyword,
+    maxResults: 5,
+  })
+
+  if (!res.data.items?.length) return `ไม่พบนัดหมายที่มีคำว่า "${keyword}" ครับ`
+
+  const event = res.data.items[0]
+  await calendar.events.delete({ calendarId: 'primary', eventId: event.id })
+  return `✅ ลบนัดหมาย "${event.summary}" เรียบร้อยแล้วครับ`
+}
+
+async function sendEmail(userId, to, subject, body) {
+  const auth = await getAuthClient(userId)
+  if (!auth) return null
+
+  const gmail = google.gmail({ version: 'v1', auth })
+
+  const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`
+  const rawBody = Buffer.from(body).toString('base64')
+  const messageParts = [
+    `To: ${to}`,
+    `Subject: ${utf8Subject}`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    rawBody,
+  ]
+  const raw = Buffer.from(messageParts.join('\n'))
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+
+  await gmail.users.messages.send({ userId: 'me', requestBody: { raw } })
+  return `✅ ส่งอีเมลถึง ${to}\nเรื่อง: "${subject}"\nเรียบร้อยแล้วครับ`
+}
+
+module.exports = {
+  getTokens, getAuthClient, getOAuth2Client,
+  getEmailSummary, getTodayCalendarEvents, getUpcomingEvents,
+  addCalendarEvent, deleteCalendarEvent,
+  readSheet, createSheet, addSheetRow, updateSheetCell, listDriveSheets,
+  sendEmail,
+}
