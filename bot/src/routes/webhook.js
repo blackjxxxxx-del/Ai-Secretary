@@ -145,8 +145,8 @@ async function handleMessageEvent(event) {
     }
 
     // Google Sheets — ลิสต์ชีตทั้งหมด
-    const listSheetKeywords = ['ดูชีตทั้งหมด', 'ชีตที่มี', 'รายชื่อ sheet', 'sheet ทั้งหมด', 'มีชีตอะไรบ้าง']
-    if (listSheetKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
+    const listSheetKeywords = ['ดูชีตทั้งหมด', 'ชีตที่มี', 'รายชื่อ sheet', 'sheet ทั้งหมด', 'มีชีตอะไรบ้าง', 'ชีตมีอะไรบ้าง', 'ชีต ทั้งหมด', 'ดูชีต', 'list sheet', 'sheets ทั้งหมด', 'ชีตอะไรบ้าง']
+    if (listSheetKeywords.some(k => text.toLowerCase().includes(k.toLowerCase())) || /ชีต.{0,5}(มี|อะไร|ทั้งหมด)/i.test(text)) {
       const tokens = await getTokens(user.id)
       if (!tokens) {
         const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
