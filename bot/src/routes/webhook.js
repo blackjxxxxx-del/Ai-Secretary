@@ -41,7 +41,7 @@ async function handleMessageEvent(event) {
       return
     }
 
-    const upgradeKeywords = ['อัปเกรด', 'upgrade', 'สมัคร pro', 'ซื้อ pro', 'pro plan', 'แพลน pro', 'plan pro']
+    const upgradeKeywords = ['อัปเกรด', 'อัพเกรด', 'อัพเพลน', 'อัปเพลน', 'upgrade', 'สมัคร pro', 'ซื้อ pro', 'pro plan', 'แพลน pro', 'plan pro', 'ใช้โปร', 'สมัครโปร']
     if (upgradeKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
       const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
       const upgradeUrl = `${webUrl}/upgrade?uid=${lineUserId}`
