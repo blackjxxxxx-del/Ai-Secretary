@@ -56,10 +56,10 @@ export default function Home() {
         {/* Pricing */}
         <section style={{ background: '#fff', padding: '64px 20px' }}>
           <h2 style={{ textAlign: 'center', fontSize: 28, fontWeight: 700, marginBottom: 48, color: '#111' }}>แผนราคา</h2>
-          <div style={{ display: 'flex', gap: 24, maxWidth: 600, margin: '0 auto', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: 24, maxWidth: 700, margin: '0 auto', justifyContent: 'center' }}>
 
             {/* Free */}
-            <div style={{ flex: 1, minWidth: 240, border: '2px solid #e5e7eb', borderRadius: 20, padding: '32px 28px' }}>
+            <div style={{ flex: '1 1 0', minWidth: 0, border: '2px solid #e5e7eb', borderRadius: 20, padding: '32px 28px' }}>
               <h3 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px', color: '#111' }}>Free</h3>
               <p style={{ fontSize: 32, fontWeight: 800, color: '#111', margin: '8px 0 24px' }}>0฿</p>
               {['จัดการงานไม่จำกัด', 'แจ้งเตือนอัตโนมัติ', 'สรุปรายวัน/รายอาทิตย์', 'สรุปเอกสาร 3 ครั้ง/เดือน'].map(f => (
@@ -71,7 +71,7 @@ export default function Home() {
             </div>
 
             {/* Pro */}
-            <div style={{ flex: 1, minWidth: 240, border: '2px solid #06C755', borderRadius: 20, padding: '32px 28px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ flex: '1 1 0', minWidth: 0, border: '2px solid #06C755', borderRadius: 20, padding: '32px 28px', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', top: 14, right: -20, background: '#06C755', color: '#fff', fontSize: 12, fontWeight: 700, padding: '4px 32px', transform: 'rotate(35deg)' }}>แนะนำ</div>
               <h3 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px', color: '#111' }}>Pro</h3>
               <p style={{ fontSize: 32, fontWeight: 800, color: '#06C755', margin: '8px 0 24px' }}>499฿ <span style={{ fontSize: 16, color: '#666', fontWeight: 400 }}>/เดือน</span></p>
