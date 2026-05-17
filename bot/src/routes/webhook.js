@@ -41,6 +41,16 @@ async function handleMessageEvent(event) {
       return
     }
 
+    const upgradeKeywords = ['อัปเกรด', 'upgrade', 'สมัคร pro', 'ซื้อ pro', 'pro plan', 'แพลน pro', 'plan pro']
+    if (upgradeKeywords.some(k => text.toLowerCase().includes(k.toLowerCase()))) {
+      const webUrl = process.env.WEB_URL || 'https://your-web-url.railway.app'
+      const upgradeUrl = `${webUrl}/upgrade?uid=${lineUserId}`
+      await replyText(replyToken,
+        `อัปเกรดเป็น Pro 499฿/เดือน\n\nคลิกลิงก์นี้เพื่อชำระเงินครับ:\n${upgradeUrl}\n\nได้รับ: สรุปเอกสารไม่จำกัด + ทุกฟีเจอร์ครบ`,
+        QUICK_REPLY_MAIN)
+      return
+    }
+
     const intent = await analyzeMessage(text)
 
     if (intent.intent === 'chat') {
