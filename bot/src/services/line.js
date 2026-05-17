@@ -9,6 +9,7 @@ const QUICK_REPLY_MAIN = {
     { type: 'action', action: { type: 'message', label: '📋 งานวันนี้', text: 'วันนี้มีอะไรบ้าง' } },
     { type: 'action', action: { type: 'message', label: '📊 งานทั้งหมด', text: 'ดูงานทั้งหมด' } },
     { type: 'action', action: { type: 'message', label: '✅ ทำเสร็จ', text: 'เสร็จแล้ว ' } },
+    { type: 'action', action: { type: 'message', label: '🔗 เชื่อม Google', text: 'เชื่อม google' } },
   ],
 }
 
